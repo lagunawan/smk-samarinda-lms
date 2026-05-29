@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS SMKN 20 Samarinda - Master Edition v5</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        input[type="radio"]:checked + span, input[type="checkbox"]:checked + span { color: #059669; font-weight: bold; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #certModal, #certModal * { visibility: visible; }
+            #certModal { position: absolute; left: 0; top: 0; width: 100%; background: white; }
+            .no-print { display: none !important; }
+            .print-break { page-break-after: always; }
+        }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-[#0f172a] text-white px-5 py-3 rounded-xl shadow-2xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 no-print">
+        <i id="toastIcon" data-lucide="info" class="w-5 h-5 text-[#059669]"></i>
+        <p id="toastMessage" class="text-sm font-medium"></p>
+    </div>
+
+    <!-- WRAPPER LOGIN -->
+    <div id="loginWrapper" class="min-h-screen flex flex-col lg:flex-row bg-white fade-in">
+        <div class="lg:w-[55%] bg-[#0f172a] text-white p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden">
+            <div class="absolute -top-32 -right-32 w-96 h-96 bg-[#059669]/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-16">
+                    <div class="w-10 h-10 bg-[#059669] rounded-xl flex items-center justify-center"><span class="text-white font-bold text-lg">20</span></div>
+                    <div><h1 class="font-bold text-xl leading-tight">SMKN 20 Samarinda</h1><p class="text-xs text-slate-400">Blended Learning & Skill Passport</p></div>
+                </div>
+                <div class="max-w-lg">
+                    <h2 class="text-4xl lg:text-5xl font-bold leading-tight mb-6">Pendidikan Vokasi <br><span class="text-[#059669]">Terintegrasi Industri</span></h2>
+                    <p class="text-slate-300 text-lg leading-relaxed">Platform terpadu untuk 65 Guru dan 36 Kelas di 8 Konsentrasi Keahlian SMKN 20 Samarinda.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex-1 flex items-center justify-center p-8 relative">
+            <div class="w-full max-w-md">
+                <h3 class="text-2xl font-bold text-slate-900 mb-2">Masuk ke LMS</h3>
+                <p class="text-slate-500 mb-6 text-sm">Gunakan NIP/NIS atau akun demo dari sistem.</p>
+                
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1 uppercase tracking-wide">Pilih Otoritas Akses</label>
+                        <select id="loginRole" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#059669] outline-none text-sm font-semibold bg-slate-50">
+                            <option value="siswa">🧑‍🎓 Siswa / Peserta Didik</option>
+                            <option value="guru">👨‍🏫 Guru Pengampu</option>
+                            <option value="admin">💼 Admin / Kepala Sekolah</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1 uppercase tracking-wide">Username (NIP/NIS)</label>
+                        <input id="loginUsername" type="text" placeholder="Contoh: 2026002" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#059669] outline-none text-sm font-medium" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-700 block mb-1 uppercase tracking-wide">Password</label>
+                        <input id="loginPassword" type="password" placeholder="Masukkan kata sandi" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#059669] outline-none text-sm font-medium" required>
+                    </div>
+                    <button type="submit" class="w-full bg-[#059669] text-white py-3.5 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg mt-2">Masuk Sistem</button>
+                </form>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 text-center">Jalan Pintas Demo Presentasi</p>
+                    <div class="flex gap-2 text-xs font-bold">
+                        <button onclick="fillLogin('siswa','2026002','siswa')" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg">Siswa 1</button>
+                        <button onclick="fillLogin('guru','guru.tsm','guru')" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg">Guru</button>
+                        <button onclick="fillLogin('admin','admin.smkn20','admin')" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg">Kepsek</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WRAPPER APLIKASI UTAMA -->
+    <div id="appWrapper" class="hidden flex-col min-h-screen fade-in">
+        <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-40 shadow-sm no-print">
+            <div class="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-[#059669] text-white w-12 h-12 rounded-xl flex items-center justify-center font-bold text-2xl shadow-sm">20</div>
+                    <div>
+                        <h1 class="font-bold text-xl leading-tight text-slate-900">LMS SMKN 20</h1>
+                        <p class="text-sm text-slate-500 font-medium">Samarinda • Blended Learning & Skill Passport</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 self-end md:self-auto">
+                    <span id="headerBadge" class="px-4 py-1.5 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 font-bold text-xs">Akses</span>
+                    <div id="headerName" class="font-bold text-sm text-slate-800 hidden md:block">Nama</div>
+                    <button onclick="logout()" class="p-2 bg-rose-50 text-rose-600 rounded-lg hover:bg-rose-100 transition" title="Keluar"><i data-lucide="power" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+        </header>
+        <main id="mainContent" class="flex-1 w-full max-w-[1400px] mx-auto px-4 md:px-6 py-8 pb-32 md:pb-8 no-print"></main>
+    </div>
+
+    <!-- MODAL SERTIFIKAT KOMPETENSI -->
+    <div id="certModal" class="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4 fade-in">
+        <div class="bg-white max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 no-print">
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="award" class="w-5 h-5 text-amber-500"></i> Lencana & Sertifikat</h3>
+                <button onclick="tutupSertifikat()" class="text-slate-400 hover:text-rose-500 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-8 overflow-y-auto bg-slate-200/50" id="certContent"></div>
+            <div class="p-5 border-t border-slate-100 bg-white text-right no-print">
+                <button onclick="window.print()" class="bg-[#0f172a] hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold shadow-md flex items-center gap-2 ml-auto transition"><i data-lucide="printer" class="w-4 h-4"></i> Cetak / Simpan PDF</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ==========================================
+// 1. DATABASE & STATE (Sesuai Konteks SMKN 20)
+// ==========================================
+let dataAdmin = [{ id: "admin.smkn20", nama: "Kepala Sekolah", pass: "admin" }];
+
+let dataGuru = [
+    { id: "guru.tsm", nama: "Drs. Eko Prasetyo, M.T", kelas: "X TSM 1, X TSM 2", program: "Teknik Sepeda Motor", pass: "guru", statusATP: "Lengkap 100%" },
+    { id: "guru.dkv", nama: "Siti Rahmawati, S.Ds", kelas: "X DKV 1", program: "Desain Komunikasi Visual", pass: "guru", statusATP: "Belum (0%)" }
+];
+
+let dataSiswa = [
+    { id: "2026001", nama: "Ahmad Dhani", kelas: "X TSM 1", program: "Teknik Sepeda Motor", pass: "siswa", progress: 0, nilaiPraktik: {}, passport: [] },
+    { id: "2026002", nama: "Siti Nurhaliza", kelas: "X TSM 1", program: "Teknik Sepeda Motor", pass: "siswa", progress: 100, nilaiPraktik: {"UNIT 1: PMKR Dasar": 92}, passport: [{unit: "UNIT 1: PMKR Dasar", subunit: "Pemeriksaan Rem Cakram"}] },
+    { id: "2026003", nama: "Budi Pratama", kelas: "X TSM 2", program: "Teknik Sepeda Motor", pass: "siswa", progress: 50, nilaiPraktik: {}, passport: [] },
+    { id: "2026004", nama: "Rizky Febian", kelas: "X DKV 1", program: "Desain Komunikasi Visual", pass: "siswa", progress: 80, nilaiPraktik: {"Desain Vektor": 88}, passport: [{unit: "Desain Vektor", subunit: "Tracing Logo"}] }
+];
+
+let learningJourneyData = [
+    { id: 1, unit: "UNIT 1: PMKR Dasar", subunit: "Pemeliharaan Mesin Dasar", tipe: "Video", link: "https://www.youtube.com/embed/dQw4w9WgXcQ", status: "Selesai", kuis: [{ tipe: "Pilihan Ganda", soal: "Fungsi utama ring piston adalah?", opsi: ["Mendinginkan mesin","Mencegah kebocoran kompresi","Menambah kecepatan"], kunci: "Mencegah kebocoran kompresi" }] },
+    { id: 2, unit: "UNIT 1: PMKR Dasar", subunit: "Pemeriksaan Rem Cakram", tipe: "Upload", link: "Lakukan pembongkaran rem cakram sesuai SOP.", status: "Belum", kuis: [{ tipe: "Upload", soal: "Tempel URL Video Dokumentasi Praktik Anda:", opsi: [], kunci: "" }] },
+    { id: 3, unit: "UNIT 2: Kelistrikan", subunit: "Analisis Rangkaian Lampu", tipe: "Materi Slide", link: "Pelajari skema kelistrikan berikut.", status: "Terkunci", kuis: [{ tipe: "Isian Singkat", soal: "Warna kabel massa Honda adalah?", opsi: [], kunci: "Hijau" }] }
+];
+
+let tugasMasuk = [
+    { idSiswa: "2026001", nama: "Ahmad Dhani", kelas: "X TSM 1", file: "https://youtube.com/watch?v=demo", unit: "UNIT 1: PMKR Dasar", subunit: "Pemeriksaan Rem Cakram" }
+];
+
+// Data Ruang Diskusi Dummy
+let diskusiKelas = [
+    { sender: "Drs. Eko Prasetyo, M.T", time: "08:00", text: "Selamat pagi anak-anak, pastikan kalian sudah menonton video materi sebelum masuk ke bengkel hari ini.", isGuru: true },
+    { sender: "Siti Nurhaliza", time: "08:15", text: "Siap, Pak Eko! Untuk alat bongkar cakram apakah sudah disediakan di bengkel?", isGuru: false }
+];
+
+let currentUser = null; 
+let currentRole = null;
+let kuisAktifList = [];
+let indexSoalAktif = 0;
+let activeModuleId = null;
+
+// Utilitas
+function cleanString(str) { return str ? str.toString().toLowerCase().replace(/\s+/g, ' ').trim() : ""; }
+function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMessage').textContent = msg;
+    const icon = document.getElementById('toastIcon');
+    icon.setAttribute('data-lucide', type === 'error' ? 'alert-circle' : type === 'info' ? 'info' : 'check-circle');
+    icon.className = `w-5 h-5 ${type === 'error' ? 'text-rose-400' : type === 'info' ? 'text-sky-400' : 'text-[#059669]'}`;
+    lucide.createIcons();
+    toast.classList.remove('translate-y-24', 'opacity-0');
+    setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3000);
+}
+
+// ==========================================
+// 2. SISTEM LOGIN
+// ==========================================
+function fillLogin(role, user, pass) {
+    document.getElementById('loginRole').value = role;
+    document.getElementById('loginUsername').value = user;
+    document.getElementById('loginPassword').value = pass;
+}
+
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const role = document.getElementById('loginRole').value;
+    const user = document.getElementById('loginUsername').value.trim();
+    const pass = document.getElementById('loginPassword').value.trim();
+    
+    let auth = false;
+    if (role === "admin") { let c = dataAdmin.find(a => a.id === user && a.pass === pass); if(c){ auth=true; currentUser=c; currentRole='admin'; } }
+    else if (role === "guru") { let c = dataGuru.find(g => g.id === user && g.pass === pass); if(c){ auth=true; currentUser=c; currentRole='guru'; } }
+    else if (role === "siswa") { let c = dataSiswa.find(s => s.id === user && s.pass === pass); if(c){ auth=true; currentUser=c; currentRole='siswa'; } }
+
+    if(!auth) return showToast('Kredensial Salah! Periksa Data Excel.', 'error');
+
+    document.getElementById('loginWrapper').classList.add('hidden');
+    document.getElementById('appWrapper').classList.remove('hidden');
+    document.getElementById('headerName').textContent = currentUser.nama;
+
+    const content = document.getElementById('mainContent');
+    if(currentRole === 'siswa') {
+        document.getElementById('headerBadge').textContent = `Siswa: ${currentUser.kelas}`;
+        renderSiswa(content, 'modul');
+    } else if(currentRole === 'guru') {
+        document.getElementById('headerBadge').textContent = "Akses: Guru Produktif";
+        renderGuru(content);
+    } else {
+        document.getElementById('headerBadge').textContent = "Akses: Kepala Sekolah";
+        renderKepsek(content);
+    }
+    lucide.createIcons();
+});
+
+function logout() {
+    currentUser = null; currentRole = null;
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('appWrapper').classList.add('hidden');
+    document.getElementById('loginWrapper').classList.remove('hidden');
+    document.getElementById('mainContent').innerHTML = '';
+}
+
+// ==========================================
+// 3. RENDER: MODE SISWA
+// ==========================================
+function renderSiswa(container, activeTab = 'modul') {
+    let contentHTML = "";
+
+    if (activeTab === 'modul') {
+        let total = learningJourneyData.length;
+        let done = learningJourneyData.filter(x => x.status === 'Selesai').length;
+        
+        let lencanaHTML = currentUser.passport.length === 0 ? 
+            `<div class="p-4 text-center border-2 border-dashed border-slate-200 rounded-xl"><i data-lucide="shield-question" class="w-8 h-8 text-slate-300 mx-auto mb-1"></i><p class="text-[11px] text-slate-400 font-semibold">Selesaikan ujian praktik untuk meraih lencana.</p></div>` : 
+            currentUser.passport.map(p => `
+                <div class="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-2 hover:bg-emerald-100 transition cursor-pointer" title="Klik Cetak Lencana" onclick="unduhPassport()">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-lg text-emerald-600">🏅</div>
+                    <div><p class="text-[11px] font-bold text-slate-800 leading-tight">${p.unit}</p><p class="text-[9px] text-emerald-600 font-bold uppercase">${p.subunit} - Tervalidasi</p></div>
+                </div>`).join('');
+
+        let listHTML = learningJourneyData.map(u => {
+            let isSelesai = u.status === 'Selesai';
+            let isKunci = u.status === 'Terkunci';
+            let icon = isSelesai ? `<i data-lucide="check" class="w-4 h-4 text-[#059669]"></i>` : isKunci ? `<i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>` : `<i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+            let textStyle = isSelesai ? 'text-slate-500' : isKunci ? 'text-slate-400' : 'text-[#059669] font-bold';
+            
+            return `
+            <div class="mb-5 cursor-pointer hover:bg-slate-50 p-2 rounded-lg transition -mx-2" ${isKunci ? '' : `onclick="bukaMateri(${u.id})"`}>
+                <h4 class="text-[11px] font-bold ${isSelesai ? 'text-[#059669]' : 'text-slate-800'} uppercase tracking-wider mb-2 flex justify-between items-center">
+                    ${u.unit} ${isSelesai ? '<span class="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">Selesai</span>' : ''}
+                </h4>
+                <div class="space-y-2 text-sm"><p class="flex items-center gap-2 ${textStyle}">${icon} ${u.subunit}</p></div>
+            </div>`;
+        }).join('');
+
+        contentHTML = `
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 fade-in h-full">
+            <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-140px)]">
+                <div class="p-5 border-b border-slate-100 shrink-0">
+                    <h3 class="font-bold text-slate-800 text-lg mb-3">${currentUser.program}</h3>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 bg-slate-200 h-1.5 rounded-full overflow-hidden"><div class="bg-[#059669] h-full transition-all duration-500" style="width: ${(done/total)*100}%"></div></div>
+                        <span class="text-xs font-bold text-slate-500">${done}/${total} Unit</span>
+                    </div>
+                </div>
+                <div class="p-6 flex-1 overflow-y-auto">${listHTML}</div>
+                <div class="p-5 bg-slate-50 border-t border-slate-100 shrink-0">
+                    <h4 class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-3">Koleksi Lencana Digital</h4>
+                    ${lencanaHTML}
+                </div>
+            </div>
+            <div class="lg:col-span-8 flex flex-col bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-[calc(100vh-140px)] overflow-y-auto" id="siswaPlayerArea">
+                <div class="flex flex-col items-center justify-center h-full text-slate-400">
+                    <i data-lucide="book-open" class="w-16 h-16 mb-4 opacity-50"></i>
+                    <p class="font-medium">Pilih materi di daftar sebelah kiri untuk mulai belajar.</p>
+                </div>
+            </div>
+        </div>`;
+    } 
+    else if (activeTab === 'diskusi') {
+        let chatHTML = diskusiKelas.map(d => `
+            <div class="flex flex-col ${d.sender === currentUser.nama ? 'items-end' : 'items-start'}">
+                <span class="text-[10px] text-slate-500 font-bold mb-1 ml-1 mr-1">${d.sender} • ${d.time}</span>
+                <div class="px-5 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed ${d.sender === currentUser.nama ? 'bg-[#059669] text-white rounded-br-none' : d.isGuru ? 'bg-[#0f172a] text-white rounded-bl-none shadow-md' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-none shadow-sm'}">
+                    ${d.text}
+                </div>
+            </div>
+        `).join('');
+
+        contentHTML = `
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-[calc(100vh-140px)] flex flex-col fade-in max-w-4xl mx-auto">
+            <div class="p-5 border-b border-slate-100 bg-slate-50 flex items-center gap-3 shrink-0">
+                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i data-lucide="users" class="w-5 h-5"></i></div>
+                <div><h3 class="font-bold text-slate-800">Ruang Kolaborasi & Diskusi</h3><p class="text-xs text-slate-500 font-medium">Kelas: ${currentUser.kelas}</p></div>
+            </div>
+            <div class="flex-1 p-6 overflow-y-auto bg-slate-50/50 space-y-5" id="chatContainer">
+                ${chatHTML}
+            </div>
+            <div class="p-4 bg-white border-t border-slate-100 shrink-0 flex gap-3 items-end">
+                <textarea id="chatInput" rows="2" class="w-full border border-slate-300 rounded-xl px-4 py-3 outline-none focus:border-[#059669] text-sm resize-none" placeholder="Ketik pertanyaan atau diskusi di sini..."></textarea>
+                <button onclick="kirimPesan()" class="bg-[#0f172a] hover:bg-slate-800 text-white p-3.5 rounded-xl shadow-md transition shrink-0"><i data-lucide="send" class="w-5 h-5"></i></button>
+            </div>
+        </div>`;
+    }
+
+    container.innerHTML = `
+        ${contentHTML}
+        <!-- Floating Bottom Nav (Siswa) -->
+        <nav class="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white border-t border-slate-200 px-4 py-3 flex justify-around no-print shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+            <button onclick="renderSiswa(document.getElementById('mainContent'), 'modul')" class="flex flex-col items-center gap-1 ${activeTab==='modul'?'text-[#059669]':'text-slate-400'} transition"><i data-lucide="book-open" class="w-6 h-6"></i><span class="text-[10px] font-bold">Modul</span></button>
+            <button onclick="renderSiswa(document.getElementById('mainContent'), 'diskusi')" class="flex flex-col items-center gap-1 ${activeTab==='diskusi'?'text-[#059669]':'text-slate-400'} transition"><i data-lucide="message-square" class="w-6 h-6"></i><span class="text-[10px] font-bold">Diskusi</span></button>
+        </nav>
+        <div class="hidden md:flex fixed right-6 top-24 flex-col gap-3 z-40 no-print">
+            <button onclick="renderSiswa(document.getElementById('mainContent'), 'modul')" class="p-4 rounded-2xl shadow-lg border transition flex items-center justify-center group relative ${activeTab==='modul'?'bg-[#059669] text-white border-emerald-600':'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}">
+                <i data-lucide="book-open" class="w-6 h-6"></i><span class="absolute right-full mr-4 bg-[#0f172a] text-white px-3 py-1.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Alur Modul</span>
+            </button>
+            <button onclick="renderSiswa(document.getElementById('mainContent'), 'diskusi')" class="p-4 rounded-2xl shadow-lg border transition flex items-center justify-center group relative ${activeTab==='diskusi'?'bg-[#059669] text-white border-emerald-600':'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}">
+                <i data-lucide="message-square" class="w-6 h-6"></i><span class="absolute right-full mr-4 bg-[#0f172a] text-white px-3 py-1.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Ruang Kolaborasi</span>
+            </button>
+        </div>
+    `;
+
+    if(activeTab === 'diskusi') {
+        let chatDiv = document.getElementById('chatContainer');
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+    lucide.createIcons();
+}
+
+function kirimPesan() {
+    let input = document.getElementById('chatInput');
+    if(!input.value.trim()) return;
+    
+    let now = new Date();
+    let timeStr = String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+    
+    diskusiKelas.push({ sender: currentUser.nama, time: timeStr, text: escapeHTML(input.value.trim()), isGuru: false });
+    input.value = '';
+    renderSiswa(document.getElementById('mainContent'), 'diskusi');
+}
+
+function bukaMateri(id) {
+    activeModuleId = id;
+    let item = learningJourneyData.find(x => x.id === id);
+    kuisAktifList = item.kuis; indexSoalAktif = 0;
+    let isPassportReady = currentUser.passport.length > 0;
+
+    const playerArea = document.getElementById('siswaPlayerArea');
+    playerArea.innerHTML = `
+        <div class="flex items-center justify-between mb-4">
+            <span class="bg-slate-100 border border-slate-200 text-slate-600 text-[10px] uppercase font-bold px-3 py-1 rounded-md w-fit">${item.tipe}</span>
+            <span class="text-xs font-bold text-slate-500">${item.unit}</span>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-6">${item.subunit}</h2>
+        
+        <div class="w-full aspect-[16/9] bg-[#0f172a] rounded-2xl flex flex-col items-center justify-center p-6 text-center shadow-lg relative overflow-hidden mb-6 shrink-0">
+            ${item.tipe === 'Video' ? `<iframe class="w-full h-full absolute inset-0" src="${item.link}" frameborder="0" allowfullscreen></iframe>` : `<i data-lucide="file-text" class="w-12 h-12 text-slate-300 mb-4 opacity-80"></i><h3 class="text-lg font-bold text-white mb-2">${item.link}</h3><p class="text-slate-400 text-sm max-w-md">Silakan pelajari instruksi di atas dengan saksama sebelum memulai ujian praktik.</p>`}
+        </div>
+
+        <div id="quizContainer" class="bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-inner hidden shrink-0 mb-6">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-4 mb-5">
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="edit-3" class="w-5 h-5 text-[#059669]"></i> Uji Pemahaman</h3>
+                <span id="quizProgress" class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-lg shadow-sm"></span>
+            </div>
+            <p id="quizPertanyaan" class="font-semibold text-slate-800 mb-4 text-lg"></p>
+            <div id="quizInputArea" class="space-y-3 mb-6"></div>
+            <button onclick="submitJawabanSiswa()" class="w-full bg-[#0f172a] hover:bg-slate-800 text-white font-bold py-3.5 rounded-xl transition shadow-md">Verifikasi Jawaban</button>
+        </div>
+
+        <div id="actionArea" class="flex flex-col md:flex-row items-center justify-between gap-4 p-5 bg-white border border-slate-200 rounded-xl shadow-sm mt-auto shrink-0">
+            <div>
+                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider mb-1.5">Aksi Tindak Lanjut</p>
+                <button ${isPassportReady ? 'onclick="unduhPassport()"' : ''} class="${isPassportReady ? 'bg-emerald-50 border-emerald-300 text-emerald-700 hover:bg-emerald-100 cursor-pointer shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'} border px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition">
+                    🏅 Cetak Transkrip Lencana
+                </button>
+            </div>
+            ${item.status !== 'Selesai' ? `<button onclick="mulaiKuis()" class="bg-[#059669] hover:bg-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-md">Tandai Paham & Lanjut Kuis <i data-lucide="arrow-right" class="w-4 h-4"></i></button>` : `<span class="text-sm font-bold text-[#059669] bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200"><i data-lucide="check-circle" class="w-5 h-5 inline mr-1"></i> Modul ini selesai</span>`}
+        </div>
+    `;
+    lucide.createIcons();
+}
+
+// Fitur Modal Sertifikat Kompetensi
+function unduhPassport() {
+    document.getElementById('certModal').classList.remove('hidden');
+    let certContent = document.getElementById('certContent');
+
+    let certsHTML = currentUser.passport.map(p => `
+        <div class="bg-white border-4 border-slate-100 rounded-3xl p-10 mb-8 relative overflow-hidden shadow-sm print:border-slate-800 print:shadow-none print-break">
+            <div class="absolute top-0 left-0 w-full h-3 bg-[#059669]"></div>
+            
+            <div class="text-center mb-10">
+                <div class="w-20 h-20 bg-[#0f172a] text-white rounded-full flex items-center justify-center font-black text-3xl mx-auto mb-4 border-4 border-slate-100 shadow-md">20</div>
+                <h2 class="text-3xl font-black text-slate-900 tracking-wider uppercase mb-1">Sertifikat Kompetensi</h2>
+                <p class="text-base text-slate-500 font-semibold tracking-widest uppercase">SMK Negeri 20 Samarinda</p>
+            </div>
+
+            <div class="mb-10 bg-slate-50 p-6 rounded-2xl border border-slate-100 mx-auto max-w-lg">
+                <table class="w-full text-base">
+                    <tr><td class="py-2 text-slate-500 w-2/5 font-medium">Nama Peserta</td><td class="py-2 font-bold text-slate-800">: ${currentUser.nama}</td></tr>
+                    <tr><td class="py-2 text-slate-500 font-medium">Nomor Induk Siswa</td><td class="py-2 font-bold text-slate-800">: ${currentUser.id}</td></tr>
+                    <tr><td class="py-2 text-slate-500 font-medium">Konsentrasi Keahlian</td><td class="py-2 font-bold text-slate-800">: ${currentUser.program}</td></tr>
+                </table>
+            </div>
+
+            <div class="text-center mb-8">
+                <p class="text-sm text-slate-500 uppercase tracking-widest font-bold mb-3">Telah dinyatakan</p>
+                <div class="inline-block border-[6px] border-[#059669] text-[#059669] px-8 py-3 text-4xl font-black uppercase tracking-widest transform -rotate-3 rounded-xl shadow-sm bg-emerald-50/50">
+                    KOMPETEN
+                </div>
+            </div>
+
+            <div class="text-center bg-slate-50 py-4 px-6 rounded-xl border border-slate-100 max-w-md mx-auto">
+                <p class="text-xs text-slate-500 font-bold tracking-wider mb-1">PADA UNIT STANDAR:</p>
+                <p class="text-lg font-black text-slate-900 leading-tight">${p.unit}</p>
+                <p class="text-sm font-semibold text-slate-600 mt-1">${p.subunit}</p>
+            </div>
+        </div>
+    `).join('');
+
+    certContent.innerHTML = currentUser.passport.length === 0 ? `<p class="text-center text-slate-500">Belum ada sertifikat.</p>` : certsHTML;
+    lucide.createIcons();
+}
+
+function tutupSertifikat() { document.getElementById('certModal').classList.add('hidden'); }
+
+function mulaiKuis() {
+    document.getElementById('actionArea').classList.add('hidden');
+    document.getElementById('quizContainer').classList.remove('hidden');
+    renderSoalSiswa();
+}
+
+function renderSoalSiswa() {
+    if(indexSoalAktif >= kuisAktifList.length) {
+        let active = learningJourneyData.find(x => x.id === activeModuleId);
+        active.status = "Selesai";
+        if(active.tipe !== "Upload") currentUser.progress = Math.min(100, currentUser.progress + (100/learningJourneyData.length));
+        let next = learningJourneyData.find(x => x.id === active.id + 1);
+        if(next && next.status === 'Terkunci') next.status = "Belum";
+        
+        showToast('Evaluasi berhasil diselesaikan!', 'success');
+        setTimeout(() => {
+            renderSiswa(document.getElementById('mainContent'), 'modul');
+            if(next) bukaMateri(next.id); else bukaMateri(active.id);
+        }, 1000);
+        return;
+    }
+
+    document.getElementById("quizProgress").innerText = `Soal ${indexSoalAktif + 1} dari ${kuisAktifList.length}`;
+    let s = kuisAktifList[indexSoalAktif]; document.getElementById("quizPertanyaan").innerText = s.soal;
+    const container = document.getElementById("quizInputArea"); container.innerHTML = "";
+    
+    if(s.tipe === "Pilihan Ganda" || s.tipe === "Ceklis") {
+        let type = s.tipe === "Ceklis" ? "checkbox" : "radio";
+        s.opsi.forEach((o) => {
+            container.innerHTML += `<label class="flex items-center gap-3 p-4 bg-white border border-slate-200 rounded-xl cursor-pointer hover:bg-emerald-50 hover:border-emerald-200 transition group shadow-sm"><input type="${type}" name="sAns" value="${o}" class="w-4 h-4 text-[#059669] border-slate-300 focus:ring-[#059669]"><span class="text-sm font-medium text-slate-700 group-hover:text-slate-900">${o}</span></label>`;
+        });
+    } else if (s.tipe === "Isian Singkat") container.innerHTML = `<input type="text" id="sTextAns" placeholder="Ketik jawaban singkat Anda..." class="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#059669] outline-none text-sm font-medium bg-white shadow-sm">`;
+    else if (s.tipe === "Upload") container.innerHTML = `<input type="text" id="sTextAns" placeholder="Tempel URL (Google Drive / YouTube)" class="w-full p-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#059669] outline-none text-sm font-medium bg-white shadow-sm">`;
+}
+
+function submitJawabanSiswa() {
+    let s = kuisAktifList[indexSoalAktif]; let ans = "";
+    let activeItem = learningJourneyData.find(x=>x.id===activeModuleId);
+
+    if(s.tipe === "Upload") {
+        ans = document.getElementById("sTextAns").value;
+        if(!ans) return showToast("Harap tempel URL tugas Anda!", "error");
+        tugasMasuk.push({ idSiswa: currentUser.id, nama: currentUser.nama, kelas: currentUser.kelas, file: ans, unit: activeItem.unit, subunit: activeItem.subunit });
+        indexSoalAktif++; renderSoalSiswa(); return;
+    }
+
+    if (s.tipe === "Isian Singkat") {
+        ans = document.getElementById("sTextAns").value; if(!ans) return showToast("Harap isi jawaban Anda!", "error");
+    } else {
+        let chosen = document.querySelectorAll('input[name="sAns"]:checked');
+        if(chosen.length === 0) return showToast("Pilih salah satu jawaban!", "error");
+        ans = Array.from(chosen).map(c => c.value).join(",");
+    }
+
+    if(cleanString(ans) === cleanString(s.kunci)) {
+        showToast("Jawaban Tepat!", "success");
+        setTimeout(() => { indexSoalAktif++; renderSoalSiswa(); }, 800);
+    } else showToast("Jawaban kurang tepat. Coba lagi.", "error");
+}
+
+function escapeHTML(str) { return str ? str.toString().replace(/[&<>'"]/g, tag => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'}[tag] || tag)) : ''; }
+
+// ==========================================
+// 4. RENDER: MODE GURU
+// ==========================================
+function filterKelasGuru() {
+    let selectedClass = document.getElementById('guruKelasSelect').value;
+    renderGuru(document.getElementById('mainContent'), selectedClass);
+}
+
+function renderGuru(container, activeClass = null) {
+    if(!activeClass) activeClass = currentUser.kelas.split(',')[0].trim();
+    
+    // Filter Data Berdasarkan Kelas Pilihan
+    let myStudents = dataSiswa.filter(s => s.kelas === activeClass);
+    let myTugas = tugasMasuk.filter(t => t.kelas === activeClass);
+    
+    let listTugasHTML = myTugas.length ? myTugas.map((t) => {
+        let originalIndex = tugasMasuk.indexOf(t);
+        return `
+        <div class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-slate-50 transition border-b border-slate-100 last:border-0">
+            <div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${t.unit} - ${t.subunit}</span>
+                <h4 class="font-bold text-slate-900 text-base mt-1">${t.nama}</h4>
+                <a href="${t.file}" target="_blank" class="text-sm text-sky-600 font-semibold mt-1 flex items-center gap-1 hover:underline"><i data-lucide="external-link" class="w-3 h-3"></i> Tonton Bukti Praktik</a>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <input type="number" id="nilai_praktik_${originalIndex}" placeholder="0-100" min="0" max="100" class="w-full sm:w-24 px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-bold text-center outline-none focus:border-[#059669]">
+                <button onclick="validasiTugasGuru(${originalIndex})" class="w-full sm:w-auto px-5 py-2.5 bg-[#059669] hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition whitespace-nowrap">Sahkan Nilai</button>
+            </div>
+        </div>`;
+    }).join('') : `<div class="p-8 text-center text-slate-500 font-medium">Tidak ada antrean tugas praktik dari kelas ${activeClass}.</div>`;
+
+    container.innerHTML = `
+    <div class="fade-in">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div><h2 class="text-2xl font-bold text-slate-900 mb-1">Ruang Kerja Guru</h2><p class="text-slate-500 text-sm">Kelola alur pembelajaran & validasi capaian praktik siswa.</p></div>
+            <div class="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm">
+                <span class="text-sm font-semibold text-slate-500">Mengajar Kelas:</span>
+                <select id="guruKelasSelect" onchange="filterKelasGuru()" class="font-bold text-slate-800 bg-transparent outline-none cursor-pointer text-base">
+                    ${currentUser.kelas.split(',').map(k => `<option value="${k.trim()}" ${k.trim()===activeClass?'selected':''}>${k.trim()}</option>`).join('')}
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                <h3 class="font-bold text-lg text-slate-900 mb-2">Build Modul via Template</h3>
+                <p class="text-sm text-slate-500 mb-6">Isi excel, sistem meraciknya menjadi kursus interaktif.</p>
+                <div class="relative border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl p-8 text-center hover:bg-slate-100 transition cursor-pointer">
+                    <input type="file" accept=".xlsx" onchange="importKurikulumGuru(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <i data-lucide="bar-chart-2" class="w-10 h-10 mx-auto text-sky-500 mb-3 transform rotate-90"></i>
+                    <p class="font-bold text-slate-800 text-sm">Tarik & Lepas File Excel</p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-fit">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+                    <div><h3 class="font-bold text-lg text-slate-900">Validasi Kinerja Praktik</h3><p class="text-sm text-slate-500">Nilai tugas unggahan siswa Kelas ${activeClass}.</p></div>
+                    ${myTugas.length ? `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">${myTugas.length} Butuh Dinilai</span>` : ''}
+                </div>
+                <div class="divide-y divide-slate-100">${listTugasHTML}</div>
+            </div>
+
+            <div class="lg:col-span-12 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-2">
+                <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div><h3 class="font-bold text-lg text-slate-900">Buku Nilai & Kinerja Kelas ${activeClass}</h3><p class="text-sm text-slate-500">Rekap progres teori (30%) dan Rata-rata Praktik (70%) menjadi Nilai Akhir (Raport).</p></div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-slate-100 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                            <tr>
+                                <th class="p-4">Nama Siswa / NIS</th>
+                                <th class="p-4 text-center">Progress Teori (LMS)</th>
+                                <th class="p-4 text-center">Rata-Rata Praktik</th>
+                                <th class="p-4 text-center bg-emerald-50 text-emerald-800">Nilai Akhir Raport</th>
+                                <th class="p-4">Daftar Lencana Kompetensi Diperoleh</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${myStudents.length ? myStudents.map(s => {
+                                let scores = Object.values(s.nilaiPraktik);
+                                let avgPraktik = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : 0;
+                                let nilaiRaport = Math.round((Math.min(s.progress, 100) * 0.3) + (avgPraktik * 0.7)); 
+                                let lencanaBadge = s.passport.length ? s.passport.map(p=>`<span class="inline-block text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded border border-emerald-200 mr-1 mb-1 shadow-sm">${p.unit}</span>`).join('') : '<span class="text-xs text-slate-400 italic">Belum Ada</span>';
+
+                                return `
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-4 font-bold text-slate-800">${s.nama}<br><span class="text-xs font-normal text-slate-500">${s.id}</span></td>
+                                    <td class="p-4 text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden"><div class="bg-sky-500 h-full" style="width: ${Math.min(s.progress, 100)}%"></div></div>
+                                            <span class="text-xs font-bold text-slate-700">${Math.round(Math.min(s.progress, 100))}%</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-4 text-center font-bold text-slate-700">${avgPraktik || '-'}</td>
+                                    <td class="p-4 text-center font-black text-lg text-[#059669] bg-emerald-50/30">${nilaiRaport || '-'}</td>
+                                    <td class="p-4 whitespace-normal min-w-[200px]">${lencanaBadge}</td>
+                                </tr>`;
+                            }).join('') : `<tr><td colspan="5" class="p-8 text-center text-slate-500 font-medium">Belum ada siswa di kelas ${activeClass}.</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    lucide.createIcons();
+}
+
+function validasiTugasGuru(index) {
+    let inputVal = document.getElementById('nilai_praktik_' + index).value;
+    if(!inputVal || inputVal < 0 || inputVal > 100) return showToast("Masukkan nilai 0-100 terlebih dahulu!", "error");
+    
+    let t = tugasMasuk[index];
+    let sIdx = dataSiswa.findIndex(s => s.id === t.idSiswa);
+    
+    if(sIdx > -1) {
+        dataSiswa[sIdx].nilaiPraktik[t.unit] = parseInt(inputVal);
+        if(!dataSiswa[sIdx].passport.find(p => p.unit === t.unit)) {
+            dataSiswa[sIdx].passport.push({ unit: t.unit, subunit: t.subunit });
+        }
+    }
+    tugasMasuk.splice(index, 1);
+    showToast(`Nilai ${inputVal} disimpan! Siswa ${t.nama} mendapat lencana.`, 'success');
+    
+    let activeClass = document.getElementById('guruKelasSelect').value;
+    renderGuru(document.getElementById('mainContent'), activeClass);
+}
+
+function importKurikulumGuru(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
+        const excelData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        let newJourney = []; let currentId = 1;
+        excelData.forEach(row => {
+            let unitName = row['Unit Kompetensi']; let subUnitName = row['Sub Unit Pembelajaran'];
+            let existingSub = newJourney.find(x => x.subunit === subUnitName && x.unit === unitName);
+            let opsiMentah = row['Pilihan Opsi'];
+            let kuisItem = { tipe: row['Tipe Soal'], soal: row['Pertanyaan Evaluasi'], opsi: opsiMentah ? opsiMentah.split(',').map(s=>s.trim()) : [], kunci: row['Kunci Jawaban'] ? row['Kunci Jawaban'].toString().trim() : "" };
+            if(existingSub) existingSub.kuis.push(kuisItem);
+            else { newJourney.push({ id: currentId, unit: unitName, subunit: subUnitName, tipe: row['Tipe Konten'], link: row['Link Media'], status: currentId === 1 ? "Belum" : "Terkunci", kuis: [kuisItem] }); currentId++; }
+        });
+        learningJourneyData = newJourney;
+        showToast(`Berhasil merakit ${newJourney.length} Modul dari Excel!`, 'success');
+        let activeClass = document.getElementById('guruKelasSelect').value;
+        renderGuru(document.getElementById('mainContent'), activeClass);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// ==========================================
+// 5. RENDER: MODE KEPSEK (Termasuk Rekapitulasi per Jurusan)
+// ==========================================
+function renderKepsek(container) {
+    let guruAktif = dataGuru.filter(g => g.statusATP.includes('100%')).length;
+    let siswaKompeten = dataSiswa.filter(s => s.passport.length > 0).length;
+    let totalPassport = dataSiswa.reduce((acc, curr) => acc + curr.passport.length, 0);
+
+    // Kumpulkan nama Konsentrasi Keahlian unik (gabungan Guru dan Siswa)
+    let allPrograms = [...new Set([...dataSiswa.map(s => s.program), ...dataGuru.map(g => g.program)])];
+    
+    let summaryHTML = allPrograms.map(prog => {
+        let sProg = dataSiswa.filter(s => s.program === prog);
+        let gProg = dataGuru.filter(g => g.program === prog);
+        
+        let avgSiswa = sProg.length ? Math.round(sProg.reduce((a,b)=>a+Math.min(b.progress,100), 0)/sProg.length) : 0;
+        let gAktif = gProg.filter(g => g.statusATP.includes('100%')).length;
+        let pGuru = gProg.length ? Math.round((gAktif/gProg.length)*100) : 0;
+        
+        let statusBadge = (avgSiswa >= 70 && pGuru >= 70) 
+            ? '<span class="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-emerald-200 shadow-sm">Sangat Baik</span>' 
+            : '<span class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-amber-200 shadow-sm">Perlu Perhatian</span>';
+
+        return `
+        <tr class="hover:bg-slate-50 transition">
+            <td class="px-6 py-5 font-bold text-slate-900">${prog}</td>
+            <td class="px-6 py-5">
+                <div class="flex items-center gap-3">
+                    <div class="w-24 h-2 bg-slate-200 rounded-full overflow-hidden"><div class="bg-[#059669] h-full" style="width:${pGuru}%"></div></div>
+                    <span class="text-sm font-bold text-slate-700">${pGuru}% Upload</span>
+                </div>
+            </td>
+            <td class="px-6 py-5 font-semibold text-slate-700">${avgSiswa}/100</td>
+            <td class="px-6 py-5">${statusBadge}</td>
+        </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+    <div class="fade-in">
+        <div class="mb-8"><h2 class="text-2xl font-bold text-slate-900 mb-1">Dashboard Monitoring Kepala Sekolah</h2><p class="text-slate-500 text-sm">Pantau aktivitas mengajar dan manajemen sinkronisasi data master.</p></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">KEAKTIFAN GURU</p><div class="flex items-end gap-3 mb-2"><h3 class="text-4xl font-black text-slate-900">${Math.round((guruAktif/dataGuru.length)*100)}%</h3></div><p class="text-sm text-slate-500">${guruAktif} dari ${dataGuru.length} Guru aktif mengupload modul.</p></div>
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">SISWA 'KOMPETEN'</p><div class="flex items-end gap-2 mb-2"><h3 class="text-4xl font-black text-slate-900">${siswaKompeten}</h3><span class="text-sm text-slate-400 font-medium mb-1">/ ${dataSiswa.length} Siswa</span></div><p class="text-sm text-slate-500">Telah memiliki minimal 1 Lencana Praktik.</p></div>
+            <div class="bg-[#0f172a] p-6 rounded-2xl shadow-md border border-slate-800"><p class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">SKILL PASSPORT TERBIT</p><div class="flex items-end gap-2 mb-2"><h3 class="text-4xl font-black text-white">${totalPassport}</h3><span class="text-sm text-slate-400 font-medium mb-1">Lencana</span></div><p class="text-sm text-slate-300">Siap disinkronisasi dengan industri Mitra.</p></div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="font-bold text-lg text-slate-900">Rekapitulasi Kinerja per Konsentrasi Keahlian</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-100 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
+                        <tr>
+                            <th class="px-6 py-4">Nama Jurusan / Program</th>
+                            <th class="px-6 py-4">Progress Upload ATP Guru</th>
+                            <th class="px-6 py-4">Rata-Rata Progres Belajar Siswa</th>
+                            <th class="px-6 py-4">Status Kinerja</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${summaryHTML || `<tr><td colspan="4" class="p-8 text-center text-slate-500">Tidak ada data terdaftar.</td></tr>`}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+                <i data-lucide="users" class="w-12 h-12 mx-auto text-sky-500 mb-3"></i><h3 class="font-bold text-lg text-slate-900 mb-1">Sinkronisasi Data Siswa</h3><p class="text-xs text-slate-500 mb-5">Update data siswa dari Excel secara aman.</p>
+                <div class="relative border-2 border-dashed border-sky-300 bg-sky-50 rounded-xl p-4 hover:bg-sky-100 transition cursor-pointer"><input type="file" accept=".xlsx" onchange="importDataSiswaAdmin(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><p class="font-bold text-sm text-sky-800">Upload Excel Data Siswa</p></div>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 text-center">
+                <i data-lucide="graduation-cap" class="w-12 h-12 mx-auto text-amber-500 mb-3"></i><h3 class="font-bold text-lg text-slate-900 mb-1">Sinkronisasi Data Guru</h3><p class="text-xs text-slate-500 mb-5">Tambah guru atau perbarui pembagian kelas.</p>
+                <div class="relative border-2 border-dashed border-amber-300 bg-amber-50 rounded-xl p-4 hover:bg-amber-100 transition cursor-pointer"><input type="file" accept=".xlsx" onchange="importDataGuruAdmin(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><p class="font-bold text-sm text-amber-800">Upload Excel Data Guru</p></div>
+            </div>
+        </div>
+    </div>`;
+    lucide.createIcons();
+}
+
+function importDataSiswaAdmin(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
+        const excelData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        let cNew=0, cUpd=0;
+        excelData.forEach(row => {
+            let nis = String(row['NIS'] || row['nis']); let ex = dataSiswa.findIndex(s => s.id === nis);
+            if(ex > -1) { dataSiswa[ex].nama = String(row['Nama Lengkap']); dataSiswa[ex].kelas = String(row['Kelas']); cUpd++; }
+            else { dataSiswa.push({ id: nis, nama: String(row['Nama Lengkap']), kelas: String(row['Kelas']), program: String(row['Program']||"-"), pass: String(row['Password']), progress: 0, nilaiPraktik: {}, passport: [] }); cNew++; }
+        });
+        showToast(`Siswa tersinkron! (Baru: ${cNew}, Update: ${cUpd})`, 'success');
+        renderKepsek(document.getElementById('mainContent'));
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function importDataGuruAdmin(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
+        const excelData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+        let cNew=0, cUpd=0;
+        excelData.forEach(row => {
+            let nip = String(row['NIP'] || row['nip']); let ex = dataGuru.findIndex(g => g.id === nip);
+            if(ex > -1) { dataGuru[ex].nama = String(row['Nama Lengkap']); dataGuru[ex].kelas = String(row['Kelas']); cUpd++; }
+            else { dataGuru.push({ id: nip, nama: String(row['Nama Lengkap']), kelas: String(row['Kelas']), program: String(row['Program']||"-"), pass: String(row['Password']), statusATP: "Belum" }); cNew++; }
+        });
+        showToast(`Guru tersinkron! (Baru: ${cNew}, Update: ${cUpd})`, 'success');
+        renderKepsek(document.getElementById('mainContent'));
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+lucide.createIcons();
+</script>
+</body>
+</html>
